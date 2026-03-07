@@ -1,0 +1,6 @@
+[package]
+name = "alice-datashield"
+version = "0.1.0"
+edition = "2021"
+description = "Data masking, anonymization, and differential privacy"
+license = "MIT OR Apache-2.0"
