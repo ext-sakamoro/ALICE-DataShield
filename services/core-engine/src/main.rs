@@ -1,4 +1,3 @@
-#![allow(dead_code, unused_variables)]
 use axum::{extract::State, response::Json, routing::{get, post}, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
