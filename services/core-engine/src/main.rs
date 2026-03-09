@@ -71,7 +71,7 @@ async fn scan_data(State(s): State<Arc<AppState>>, Json(req): Json<ScanRequest>)
 }
 
 async fn check_posture(State(s): State<Arc<AppState>>, Json(_req): Json<PostureRequest>) -> Json<PostureResponse> {
-    let st = s.stats.lock().unwrap();
+    let _st = s.stats.lock().unwrap();
     Json(PostureResponse { posture_id: uuid::Uuid::new_v4().to_string(), overall_score: 72.5, risk_level: "medium".into(),
         findings: vec![
             Finding { category: "Encryption".into(), severity: "high".into(), count: 3, description: "3 data stores lack encryption at rest".into() },
