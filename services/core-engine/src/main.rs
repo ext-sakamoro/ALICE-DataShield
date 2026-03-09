@@ -12,6 +12,7 @@ struct Stats { total_scans: u64, total_classifications: u64, total_alerts: u64, 
 struct Health { status: String, version: String, uptime_secs: u64, total_ops: u64 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct ScanRequest { data_source: String, source_type: Option<String>, deep_scan: Option<bool> }
 #[derive(Serialize)]
 struct ScanResponse { scan_id: String, data_source: String, files_scanned: u64, sensitive_files: u64, classifications: Vec<Classification>, posture_score: f64, elapsed_ms: u64 }
@@ -19,6 +20,7 @@ struct ScanResponse { scan_id: String, data_source: String, files_scanned: u64, 
 struct Classification { path: String, category: String, confidence: f64, pii_types: Vec<String> }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct PostureRequest { scope: Option<String> }
 #[derive(Serialize)]
 struct PostureResponse { posture_id: String, overall_score: f64, risk_level: String, findings: Vec<Finding>, recommendations: Vec<String> }
@@ -26,6 +28,7 @@ struct PostureResponse { posture_id: String, overall_score: f64, risk_level: Str
 struct Finding { category: String, severity: String, count: u32, description: String }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct EncryptAuditRequest { data_source: String }
 #[derive(Serialize)]
 struct EncryptAuditResponse { audit_id: String, data_source: String, encrypted_at_rest: bool, encrypted_in_transit: bool, key_rotation_days: u32, compliance: Vec<String>, recommendations: Vec<String> }
