@@ -12,7 +12,6 @@ use crate::errors::*;
 use crate::generalization::*;
 use crate::k_anonymity::*;
 use crate::masking::*;
-use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
