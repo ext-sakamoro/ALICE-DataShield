@@ -2,7 +2,9 @@
 name = "alice-datashield-engine"
 version = "0.1.0"
 edition = "2021"
-license = "AGPL-3.0-or-later"
+license = "LicenseRef-Proprietary"
+# proprietary: crates.io へ出さない (LICENSE 参照)
+publish = false
 [dependencies]
 axum = { version = "0.7", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }

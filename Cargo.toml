@@ -3,4 +3,6 @@ name = "alice-datashield"
 version = "0.1.0"
 edition = "2021"
 description = "Data masking, anonymization, and differential privacy"
-license = "MIT OR Apache-2.0"
+license = "LicenseRef-Proprietary"
+# proprietary: crates.io へ出さない (LICENSE 参照)
+publish = false
