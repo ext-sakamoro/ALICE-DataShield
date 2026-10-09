@@ -1,7 +1,9 @@
 name: ALICE DataShield CI
 on:
-  push: { branches: [main] }
+  # `ci/**` runs the same checks on a branch before it is fast-forwarded onto main
+  push: { branches: [main, 'ci/**'] }
   pull_request: { branches: [main] }
+  workflow_dispatch:
 jobs:
   test-rust:
     runs-on: ubuntu-latest
