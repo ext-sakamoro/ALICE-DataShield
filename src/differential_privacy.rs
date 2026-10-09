@@ -15,18 +15,22 @@
 //!
 //! # 使い方
 //!
-//! 名前は従来と同じなので、呼び出し側の変更は要らない
+//! 名前は従来と同じ alice-crypto 0.3.0 で型が変わった点 (`dp_count` は `i64` を返す /
+//! `DpNoise` は感度 Δ と ε を受け、値を格子に丸めてから noise を足す `privatize`
+//! を持つ) は上流の CHANGELOG に移行手順がある
 //!
 //! ```
 //! use alice_datashield::differential_privacy::{dp_count, SecureRng};
 //!
 //! let mut rng = SecureRng::from_key([7u8; 32]);
-//! let noisy = dp_count(1_000, 1.0, &mut rng).expect("eps > 0");
-//! assert!(noisy.is_finite());
+//! let noisy: i64 = dp_count(1_000, 1.0, &mut rng).expect("eps > 0");
+//! assert!((noisy - 1_000).abs() < 1_000);
 //! ```
 //!
-//! ⚠️ 残っている既知の限界は上流の module doc に書いてある (浮動小数点の逆関数法は
-//! Mironov 2012 の LSB 攻撃の対象で、ε は理想的な実数演算での値)
+//! noise は浮動小数点の `ln` / `exp` を使わず整数演算だけで、定数時間で標本化する
+//! (Mironov 2012 の下位 bit の漏れと、時間から noise の大きさが分かる経路の両方を
+//! 塞ぐ) 保証は `(ε_eff, δ)`-差分プライバシーで、`ε_eff` と `δ` の式は上流の
+//! module doc にある
 
 pub use alice_crypto::dp::{
     dp_count, dp_sum, DpError, DpNoise, EntropyError, SecureRng,

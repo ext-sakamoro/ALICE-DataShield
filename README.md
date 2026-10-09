@@ -46,7 +46,7 @@ The noise comes from [`alice-crypto`](https://github.com/ext-sakamoro/ALICE-Cryp
 use alice_datashield::differential_privacy::{dp_count, SecureRng};
 
 let mut rng = SecureRng::from_key(key_from_your_key_store);
-let noisy = dp_count(1_000, 1.0, &mut rng)?;   // count + Lap(1/epsilon)
+let noisy: i64 = dp_count(1_000, 1.0, &mut rng)?;   // count + discrete Laplace
 ```
 
 Reproducibility and privacy are not in conflict here because the determinism is
@@ -58,13 +58,17 @@ This crate used to carry its own ChaCha20 block function, CSPRNG and inverse
 transform. They were removed in favour of one implementation upstream: the same
 law existing twice is the same law getting fixed once.
 
-⚠️ `dp_count` / `dp_sum` take ε and derive the Laplace scale themselves. An ε
-that is accepted and then ignored is worse than no ε at all, and passing the
-scale in is how that happens.
+⚠️ `dp_count` / `dp_sum` / `DpNoise` take ε (and the sensitivity Δ) and derive
+the noise themselves. An ε that is accepted and then ignored is worse than no ε
+at all, and passing a scale in is how that happens.
 
-⚠️ Known limit, stated upstream as well: floating-point inverse-transform
-sampling is subject to Mironov's 2012 attack, so the ε is the value for ideal
-real arithmetic rather than a machine-level guarantee.
+The noise is sampled with integer arithmetic only and in constant time
+(alice-crypto 0.3): no floating-point `ln` or `exp`, whose low bits leak the
+uniform draw (Mironov 2012), and no sampling time that grows with the noise.
+Counts get discrete Laplace noise; real values are rounded to a power-of-two
+lattice of `2^-20 Δ` first. The guarantee is `(ε_eff, δ)`-differential
+privacy with `ε_eff ≤ ε · (1 + 2^-20)` and `δ = (1 + e^ε_eff) · 2^-103`; the
+upstream module doc gives each term.
 
 ## License
 

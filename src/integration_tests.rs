@@ -54,7 +54,7 @@ fn dp_count_noisy() {
     let mut rng = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let noisy = dp_count(1000, 1.0, &mut rng).expect("eps = 1 は有効");
     // Should be close to 1000 but not exact
-    assert!((noisy - 1000.0).abs() < 50.0);
+    assert!((noisy - 1000).abs() < 50);
 }
 
 #[test]
@@ -66,11 +66,11 @@ fn dp_sum_noisy() {
 
 #[test]
 fn laplace_noise_distribution() {
-    let mut noise = DpNoise::with_key(1.0, [0x39u8; 32]);
+    let mut noise = DpNoise::with_key(1.0, 1.0, [0x39u8; 32]);
     let mut sum = 0.0;
     let n = 1000;
     for _ in 0..n {
-        sum += noise.laplace();
+        sum += noise.privatize(0.0).expect("範囲内");
     }
     #[allow(clippy::cast_precision_loss)]
     let mean = sum / f64::from(n);
@@ -431,7 +431,7 @@ fn laplace_noise_scale_zero_is_refused() {
     // ⚠️ 旧実装は scale = 0 を「ノイズなし」として通していた
     //    scale = sensitivity / ε なので 0 は ε = ∞ (= 保護なし) を意味する
     //    黙って素通しにすると「DP を掛けたつもりで生値を出す」経路になる
-    let got = DpNoise::try_with_key(0.0, [42u8; 32]);
+    let got = DpNoise::try_with_key(0.0, 1.0, [42u8; 32]);
     assert!(
         matches!(got, Err(crate::differential_privacy::DpError::InvalidScale)),
         "scale = 0 を受理した"
@@ -441,54 +441,54 @@ fn laplace_noise_scale_zero_is_refused() {
 #[test]
 fn laplace_noise_different_seeds() {
     // 異なるシードで異なるノイズ
-    let n1 = DpNoise::with_key(1.0, [1u8; 32]).laplace();
-    let n2 = DpNoise::with_key(1.0, [2u8; 32]).laplace();
+    let n1 = DpNoise::with_key(1.0, 1.0, [1u8; 32]).privatize(0.0).expect("範囲内");
+    let n2 = DpNoise::with_key(1.0, 1.0, [2u8; 32]).privatize(0.0).expect("範囲内");
     assert!((n1 - n2).abs() > f64::EPSILON);
 }
 
 #[test]
 fn laplace_noise_advances_the_stream() {
     // 連続する 2 回が同じ値にならない (列が進んでいる = 同じ noise を使い回していない)
-    let mut noise = DpNoise::with_key(1.0, [100u8; 32]);
-    let a = noise.laplace();
-    let b = noise.laplace();
+    let mut noise = DpNoise::with_key(1.0, 1.0, [100u8; 32]);
+    let a = noise.privatize(0.0).expect("範囲内");
+    let b = noise.privatize(0.0).expect("範囲内");
     assert_ne!(a.to_bits(), b.to_bits());
 }
 
 #[test]
 fn laplace_noise_large_scale() {
     // 大きなscaleでもパニックしない
-    let noise = DpNoise::with_key(1e10, [42u8; 32]).laplace();
+    let noise = DpNoise::with_key(1e10, 1.0, [42u8; 32]).privatize(0.0).expect("範囲内");
     assert!(noise.is_finite());
 }
 
 #[test]
 fn laplace_noise_small_scale() {
     // 小さな scale では noise も小さい
-    let noise = DpNoise::with_key(1e-10, [42u8; 32]).laplace();
+    let noise = DpNoise::with_key(1e-10, 1.0, [42u8; 32]).privatize(0.0).expect("範囲内");
     assert!(noise.abs() < 1.0);
 }
 
 #[test]
 fn laplace_noise_multiple_calls() {
     // 複数回呼び出しで異なる値 (同じ生成器から 2 回引く)
-    let mut noise = DpNoise::with_key(1.0, [42u8; 32]);
-    let n1 = noise.laplace();
-    let n2 = noise.laplace();
+    let mut noise = DpNoise::with_key(1.0, 1.0, [42u8; 32]);
+    let n1 = noise.privatize(0.0).expect("範囲内");
+    let n2 = noise.privatize(0.0).expect("範囲内");
     assert!((n1 - n2).abs() > f64::EPSILON);
 }
 
 #[test]
 fn laplace_noise_variance_increases_with_scale() {
     // scaleが大きいほど分散が大きい
-    let mut small = DpNoise::with_key(0.1, [42u8; 32]);
-    let mut large = DpNoise::with_key(10.0, [42u8; 32]);
+    let mut small = DpNoise::with_key(0.1, 1.0, [42u8; 32]);
+    let mut large = DpNoise::with_key(10.0, 1.0, [42u8; 32]);
     let mut var_small = 0.0;
     let mut var_large = 0.0;
     for _ in 0..500 {
-        let n = small.laplace();
+        let n = small.privatize(0.0).expect("範囲内");
         var_small += n * n;
-        let n = large.laplace();
+        let n = large.privatize(0.0).expect("範囲内");
         var_large += n * n;
     }
     // scale 100 倍なら分散は 10^4 倍 (2b²) 桁で確認する
@@ -546,7 +546,7 @@ fn dp_count_deterministic_with_same_seed() {
     let mut rng2 = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let n1 = dp_count(100, 1.0, &mut rng1).expect("有効な ε");
     let n2 = dp_count(100, 1.0, &mut rng2).expect("有効な ε");
-    assert_eq!(n1.to_bits(), n2.to_bits());
+    assert_eq!(n1, n2);
 }
 
 // -----------------------------------------------------------------------

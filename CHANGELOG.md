@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **`alice-crypto` を 0.3 に上げた (差分プライバシーの noise)** 0.2 の noise は浮動小数点の逆関数法で、結果の下位 bit が一様値を漏らした (Mironov 2012) 0.3 は整数演算だけの離散 Laplace を定数時間で標本化する (count はそのまま、実数は格子 `2^-20 Δ` に丸めてから) 保証は `(ε_eff, δ)`-差分プライバシーで `ε_eff ≤ ε · (1 + 2^-20)`、`δ = (1 + e^ε_eff) · 2^-103` 再公開している `differential_privacy` の型が変わる: `dp_count` は `i64` を返す / `DpNoise::with_key` と `try_with_key` は `(sensitivity, epsilon, key)` を受ける / `DpNoise::laplace()` は無くなり、値を格子に丸めてから noise を足す `privatize(x)` を使う / `DpNoise::scale()` は `sensitivity()` / `epsilon()` / `lattice()` / `effective_epsilon()` に 移行手順は alice-crypto の CHANGELOG 0.3.0
 - **The differential-privacy noise source moved upstream to `alice-crypto`'s
   `dp` module** and is re-exported here as `differential_privacy`, so every
   name callers use is unchanged. This crate's own `chacha20`, `csprng` and
