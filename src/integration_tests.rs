@@ -65,7 +65,7 @@ fn dp_sum_noisy() {
 }
 
 #[test]
-fn laplace_noise_distribution() {
+fn lattice_noise_distribution() {
     let mut noise = DpNoise::with_key(1.0, 1.0, [0x39u8; 32]);
     let mut sum = 0.0;
     let n = 1000;
@@ -427,7 +427,7 @@ fn equivalence_classes_many_groups() {
 // -----------------------------------------------------------------------
 
 #[test]
-fn laplace_noise_scale_zero_is_refused() {
+fn lattice_noise_scale_zero_is_refused() {
     // ⚠️ 旧実装は scale = 0 を「ノイズなし」として通していた
     //    scale = sensitivity / ε なので 0 は ε = ∞ (= 保護なし) を意味する
     //    黙って素通しにすると「DP を掛けたつもりで生値を出す」経路になる
@@ -439,7 +439,7 @@ fn laplace_noise_scale_zero_is_refused() {
 }
 
 #[test]
-fn laplace_noise_different_seeds() {
+fn lattice_noise_different_seeds() {
     // 異なるシードで異なるノイズ
     let n1 = DpNoise::with_key(1.0, 1.0, [1u8; 32]).privatize(0.0).expect("範囲内");
     let n2 = DpNoise::with_key(1.0, 1.0, [2u8; 32]).privatize(0.0).expect("範囲内");
@@ -447,7 +447,7 @@ fn laplace_noise_different_seeds() {
 }
 
 #[test]
-fn laplace_noise_advances_the_stream() {
+fn lattice_noise_advances_the_stream() {
     // 連続する 2 回が同じ値にならない (列が進んでいる = 同じ noise を使い回していない)
     let mut noise = DpNoise::with_key(1.0, 1.0, [100u8; 32]);
     let a = noise.privatize(0.0).expect("範囲内");
@@ -456,21 +456,21 @@ fn laplace_noise_advances_the_stream() {
 }
 
 #[test]
-fn laplace_noise_large_scale() {
+fn lattice_noise_large_scale() {
     // 大きなscaleでもパニックしない
     let noise = DpNoise::with_key(1e10, 1.0, [42u8; 32]).privatize(0.0).expect("範囲内");
     assert!(noise.is_finite());
 }
 
 #[test]
-fn laplace_noise_small_scale() {
+fn lattice_noise_small_scale() {
     // 小さな scale では noise も小さい
     let noise = DpNoise::with_key(1e-10, 1.0, [42u8; 32]).privatize(0.0).expect("範囲内");
     assert!(noise.abs() < 1.0);
 }
 
 #[test]
-fn laplace_noise_multiple_calls() {
+fn lattice_noise_multiple_calls() {
     // 複数回呼び出しで異なる値 (同じ生成器から 2 回引く)
     let mut noise = DpNoise::with_key(1.0, 1.0, [42u8; 32]);
     let n1 = noise.privatize(0.0).expect("範囲内");
@@ -479,7 +479,7 @@ fn laplace_noise_multiple_calls() {
 }
 
 #[test]
-fn laplace_noise_variance_increases_with_scale() {
+fn lattice_noise_variance_increases_with_scale() {
     // scaleが大きいほど分散が大きい
     let mut small = DpNoise::with_key(0.1, 1.0, [42u8; 32]);
     let mut large = DpNoise::with_key(10.0, 1.0, [42u8; 32]);
