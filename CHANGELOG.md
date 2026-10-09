@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-10
+
+### 移行 (0.1.x の `differential_privacy` から)
+
+- `dp_count(count, ε, rng)` の戻り値は `f64` から `i64` に (noise は整数) 浮動小数点として比べていた箇所は整数の比較にする
+- `DpNoise::with_key(scale, key)` / `try_with_key(scale, key)` は `(sensitivity, epsilon, key)` に 旧 `scale` は `sensitivity / epsilon` なので、`with_key(b, key)` は `with_key(b, 1.0, key)` で同じ尺度になる `try_from_entropy(scale)` も `(sensitivity, epsilon)` に
+- `DpNoise::laplace()` (noise だけを返す) は無くなった 値を受けて格子に丸めてから noise を足す `DpNoise::privatize(x)` を使う
+- `DpNoise::scale()` は `sensitivity()` / `epsilon()` / `lattice()` / `effective_epsilon()` に
+- 不正な引数の `DpError` に `EpsilonOutOfRange` / `CountOutOfRange` / `ValueOutOfRange` が加わった
+
 ### Changed
 
 - CI: repo 直下の library crate (`differential_privacy` と integration test) を ubuntu / macos / windows で fmt・clippy・test する job `root-crate` を足した (従来の CI は services の check / clippy だけで、この crate の試験は CI で 1 本も走っていなかった) test の件数は target (lib・各 integration test・doc test) ごとに `scripts/test_counts.py` が数え、0 本の target があれば失敗する (合計だけだと 1 つの target が 0 本でも通る、意図して 0 本の target は `scripts/test-count-allowlist.txt` に理由つきで載せる、試験は `scripts/test_test_counts.py`) preflight にも同じ step を足した

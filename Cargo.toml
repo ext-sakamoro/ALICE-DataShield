@@ -1,6 +1,6 @@
 [package]
 name = "alice-datashield"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Data masking, anonymization, and differential privacy"
 # AGPL と商用の二重 license (LICENSE-AGPL / LICENSE-COMMERCIAL.md)
