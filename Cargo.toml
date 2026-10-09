@@ -6,3 +6,13 @@ description = "Data masking, anonymization, and differential privacy"
 license = "LicenseRef-Proprietary"
 # proprietary: crates.io へ出さない (LICENSE 参照)
 publish = false
+
+[dependencies]
+# 超越関数を bit 一致にする (ln は Laplace の逆関数法の中核)
+# ⚠️ 2026-10-09 まで自前の 20 項級数で、定義域外は -100.0 を返す magic 値だった
+#    (確率 0 の事象ではなく u → 0 の近傍で現実に通る経路) ⇒ 分布が歪んでいた
+alice-det-math = { version = "0.4", default-features = false }
+# noise 源の鍵を OS entropy から取る
+# ⚠️ 時刻由来の seed は、おおよその時刻を知る攻撃者が総当たりできるので使わない
+#    no_std の target では最終 binary 側で register_custom_getrandom! を登録する
+getrandom = { version = "0.2", default-features = false }

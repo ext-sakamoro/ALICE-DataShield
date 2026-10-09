@@ -51,26 +51,26 @@ fn equivalence_classes() {
 
 #[test]
 fn dp_count_noisy() {
-    let mut rng = 42u64;
-    let noisy = dp_count(1000, 1.0, &mut rng);
+    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let noisy = dp_count(1000, 1.0, &mut rng).expect("eps = 1 は有効");
     // Should be close to 1000 but not exact
     assert!((noisy - 1000.0).abs() < 50.0);
 }
 
 #[test]
 fn dp_sum_noisy() {
-    let mut rng = 42u64;
-    let noisy = dp_sum(500.0, 10.0, 1.0, &mut rng);
+    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let noisy = dp_sum(500.0, 10.0, 1.0, &mut rng).expect("有効な引数");
     assert!((noisy - 500.0).abs() < 100.0);
 }
 
 #[test]
 fn laplace_noise_distribution() {
-    let mut rng = 12345u64;
+    let mut noise = DpNoise::with_key(1.0, [0x39u8; 32]);
     let mut sum = 0.0;
     let n = 1000;
     for _ in 0..n {
-        sum += laplace_noise(1.0, &mut rng);
+        sum += noise.laplace();
     }
     #[allow(clippy::cast_precision_loss)]
     let mean = sum / f64::from(n);
@@ -82,13 +82,6 @@ fn generalize_numeric_basic() {
     let (lo, hi) = generalize_numeric(25.0, 10.0);
     assert!((lo - 20.0).abs() < 0.01);
     assert!((hi - 30.0).abs() < 0.01);
-}
-
-#[test]
-fn ln_approx_accuracy() {
-    // ln(0.5) ≈ -0.693
-    let v = ln_approx(0.5);
-    assert!((v - (-core::f64::consts::LN_2)).abs() < 0.01);
 }
 
 #[test]
@@ -434,71 +427,75 @@ fn equivalence_classes_many_groups() {
 // -----------------------------------------------------------------------
 
 #[test]
-fn laplace_noise_scale_zero() {
-    // scale=0 → ノイズなし
-    let mut rng = 42u64;
-    let noise = laplace_noise(0.0, &mut rng);
-    assert!((noise).abs() < f64::EPSILON);
+fn laplace_noise_scale_zero_is_refused() {
+    // ⚠️ 旧実装は scale = 0 を「ノイズなし」として通していた
+    //    scale = sensitivity / ε なので 0 は ε = ∞ (= 保護なし) を意味する
+    //    黙って素通しにすると「DP を掛けたつもりで生値を出す」経路になる
+    let got = DpNoise::try_with_key(0.0, [42u8; 32]);
+    assert!(
+        matches!(got, Err(crate::differential_privacy::DpError::InvalidScale)),
+        "scale = 0 を受理した"
+    );
 }
 
 #[test]
 fn laplace_noise_different_seeds() {
     // 異なるシードで異なるノイズ
-    let mut rng1 = 1u64;
-    let mut rng2 = 2u64;
-    let n1 = laplace_noise(1.0, &mut rng1);
-    let n2 = laplace_noise(1.0, &mut rng2);
+    let n1 = DpNoise::with_key(1.0, [1u8; 32]).laplace();
+    let n2 = DpNoise::with_key(1.0, [2u8; 32]).laplace();
     assert!((n1 - n2).abs() > f64::EPSILON);
 }
 
 #[test]
-fn laplace_noise_rng_state_changes() {
-    // 呼び出し後にrng状態が変化する
-    let mut rng = 100u64;
-    let original = rng;
-    let _ = laplace_noise(1.0, &mut rng);
-    assert_ne!(rng, original);
+fn laplace_noise_advances_the_stream() {
+    // 連続する 2 回が同じ値にならない (列が進んでいる = 同じ noise を使い回していない)
+    let mut noise = DpNoise::with_key(1.0, [100u8; 32]);
+    let a = noise.laplace();
+    let b = noise.laplace();
+    assert_ne!(a.to_bits(), b.to_bits());
 }
 
 #[test]
 fn laplace_noise_large_scale() {
     // 大きなscaleでもパニックしない
-    let mut rng = 42u64;
-    let noise = laplace_noise(1e10, &mut rng);
+    let noise = DpNoise::with_key(1e10, [42u8; 32]).laplace();
     assert!(noise.is_finite());
 }
 
 #[test]
 fn laplace_noise_small_scale() {
-    // 小さなscaleではノイズが小さい
-    let mut rng = 42u64;
-    let noise = laplace_noise(1e-10, &mut rng);
+    // 小さな scale では noise も小さい
+    let noise = DpNoise::with_key(1e-10, [42u8; 32]).laplace();
     assert!(noise.abs() < 1.0);
 }
 
 #[test]
 fn laplace_noise_multiple_calls() {
-    // 複数回呼び出しで異なる値
-    let mut rng = 42u64;
-    let n1 = laplace_noise(1.0, &mut rng);
-    let n2 = laplace_noise(1.0, &mut rng);
+    // 複数回呼び出しで異なる値 (同じ生成器から 2 回引く)
+    let mut noise = DpNoise::with_key(1.0, [42u8; 32]);
+    let n1 = noise.laplace();
+    let n2 = noise.laplace();
     assert!((n1 - n2).abs() > f64::EPSILON);
 }
 
 #[test]
 fn laplace_noise_variance_increases_with_scale() {
     // scaleが大きいほど分散が大きい
-    let mut rng1 = 42u64;
-    let mut rng2 = 42u64;
+    let mut small = DpNoise::with_key(0.1, [42u8; 32]);
+    let mut large = DpNoise::with_key(10.0, [42u8; 32]);
     let mut var_small = 0.0;
     let mut var_large = 0.0;
     for _ in 0..500 {
-        let n = laplace_noise(0.1, &mut rng1);
+        let n = small.laplace();
         var_small += n * n;
-        let n = laplace_noise(10.0, &mut rng2);
+        let n = large.laplace();
         var_large += n * n;
     }
-    assert!(var_large > var_small);
+    // scale 100 倍なら分散は 10^4 倍 (2b²) 桁で確認する
+    assert!(
+        var_large > var_small * 1_000.0,
+        "scale 0.1 の分散 {var_small} に対して scale 10 が {var_large} しかない"
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -506,32 +503,36 @@ fn laplace_noise_variance_increases_with_scale() {
 // -----------------------------------------------------------------------
 
 #[test]
-fn uniform_in_range() {
-    // uniform()が[0, 1)に収まることを確認
-    let mut rng = 42u64;
-    for _ in 0..1000 {
-        let u = uniform(&mut rng);
-        assert!(u >= 0.0);
-        assert!(u < 1.0);
+fn uniform_is_in_the_open_unit_interval() {
+    // ⚠️ 範囲は (0, 1] — 0 を返さないことが要件 (逆関数法で ln(0) = -inf を踏むため)
+    //    旧実装は [0, 1) で、0 が出ると noise が -inf になりえた
+    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    for _ in 0..10_000 {
+        let u = rng.next_f64_open01();
+        assert!(u > 0.0, "0 が返った (ln(0) = -inf を踏む)");
+        assert!(u <= 1.0, "1 を超えた: {u}");
     }
 }
 
 #[test]
-fn uniform_different_values() {
-    // 複数回呼び出しで異なる値を生成
-    let mut rng = 42u64;
-    let u1 = uniform(&mut rng);
-    let u2 = uniform(&mut rng);
+fn uniform_advances_the_stream() {
+    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let u1 = rng.next_f64_open01();
+    let u2 = rng.next_f64_open01();
     assert!((u1 - u2).abs() > f64::EPSILON);
 }
 
 #[test]
-fn uniform_zero_seed_handled() {
-    // シード0でもxorshift64が0除算しない
-    let mut rng = 0u64;
-    let u = uniform(&mut rng);
-    assert!(u >= 0.0);
-    assert!(u < 1.0);
+fn an_all_zero_key_still_produces_a_usable_stream() {
+    // ⚠️ 全 0 の鍵は「弱い鍵」だが ChaCha20 は状態が縮退しない
+    //    (xorshift は 0 状態で固定点になるので旧実装は特別扱いが要った)
+    let mut rng = crate::csprng::SecureRng::from_key([0u8; 32]);
+    let xs: Vec<f64> = (0..64).map(|_| rng.next_f64_open01()).collect();
+    assert!(xs.iter().all(|&u| u > 0.0 && u <= 1.0));
+    assert!(
+        xs.windows(2).any(|w| (w[0] - w[1]).abs() > f64::EPSILON),
+        "列が進んでいない"
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -539,46 +540,13 @@ fn uniform_zero_seed_handled() {
 // -----------------------------------------------------------------------
 
 #[test]
-fn dp_count_zero() {
-    // カウント0に対するDP
-    let mut rng = 42u64;
-    let noisy = dp_count(0, 1.0, &mut rng);
-    assert!(noisy.abs() < 50.0);
-}
-
-#[test]
-fn dp_count_large_epsilon() {
-    // ε大 → ノイズ小（精度高い）
-    let mut rng = 42u64;
-    let noisy = dp_count(100, 100.0, &mut rng);
-    assert!((noisy - 100.0).abs() < 5.0);
-}
-
-#[test]
-fn dp_count_small_epsilon() {
-    // ε小 → ノイズ大
-    let mut rng = 42u64;
-    let noisy = dp_count(100, 0.01, &mut rng);
-    // ノイズが大きいのでゆるいアサーション
-    assert!(noisy.is_finite());
-}
-
-#[test]
-fn dp_count_large_count() {
-    // 大きなカウント値
-    let mut rng = 42u64;
-    let noisy = dp_count(1_000_000, 1.0, &mut rng);
-    assert!((noisy - 1_000_000.0).abs() < 100.0);
-}
-
-#[test]
 fn dp_count_deterministic_with_same_seed() {
-    // 同じシードなら同じ結果
-    let mut rng1 = 42u64;
-    let mut rng2 = 42u64;
-    let n1 = dp_count(100, 1.0, &mut rng1);
-    let n2 = dp_count(100, 1.0, &mut rng2);
-    assert!((n1 - n2).abs() < f64::EPSILON);
+    // 同じ鍵なら同じ結果 (決定論の基準は seed でなく 32 byte の秘密鍵)
+    let mut rng1 = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng2 = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let n1 = dp_count(100, 1.0, &mut rng1).expect("有効な ε");
+    let n2 = dp_count(100, 1.0, &mut rng2).expect("有効な ε");
+    assert_eq!(n1.to_bits(), n2.to_bits());
 }
 
 // -----------------------------------------------------------------------
@@ -586,44 +554,12 @@ fn dp_count_deterministic_with_same_seed() {
 // -----------------------------------------------------------------------
 
 #[test]
-fn dp_sum_zero() {
-    // 合計0に対するDP
-    let mut rng = 42u64;
-    let noisy = dp_sum(0.0, 10.0, 1.0, &mut rng);
-    assert!(noisy.abs() < 100.0);
-}
-
-#[test]
-fn dp_sum_negative() {
-    // 負の合計値
-    let mut rng = 42u64;
-    let noisy = dp_sum(-500.0, 10.0, 1.0, &mut rng);
-    assert!((noisy - (-500.0)).abs() < 100.0);
-}
-
-#[test]
-fn dp_sum_sensitivity_zero() {
-    // sensitivity=0 → ノイズなし（scale=0）
-    let mut rng = 42u64;
-    let noisy = dp_sum(42.0, 0.0, 1.0, &mut rng);
-    assert!((noisy - 42.0).abs() < f64::EPSILON);
-}
-
-#[test]
-fn dp_sum_large_epsilon() {
-    // ε大 → ノイズ小
-    let mut rng = 42u64;
-    let noisy = dp_sum(1000.0, 10.0, 100.0, &mut rng);
-    assert!((noisy - 1000.0).abs() < 10.0);
-}
-
-#[test]
 fn dp_sum_deterministic_with_same_seed() {
     // 同じシードなら同じ結果
-    let mut rng1 = 42u64;
-    let mut rng2 = 42u64;
-    let n1 = dp_sum(100.0, 5.0, 1.0, &mut rng1);
-    let n2 = dp_sum(100.0, 5.0, 1.0, &mut rng2);
+    let mut rng1 = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng2 = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let n1 = dp_sum(100.0, 5.0, 1.0, &mut rng1).expect("有効な引数");
+    let n2 = dp_sum(100.0, 5.0, 1.0, &mut rng2).expect("有効な引数");
     assert!((n1 - n2).abs() < f64::EPSILON);
 }
 
@@ -708,42 +644,10 @@ fn generalize_numeric_consistency() {
 // ln_approx 追加テスト
 // -----------------------------------------------------------------------
 
-#[test]
-fn ln_approx_one() {
-    // ln(1) = 0
-    let v = ln_approx(1.0);
-    assert!(v.abs() < 0.001);
-}
-
-#[test]
-fn ln_approx_zero() {
-    // ln(0) は大きな負の値
-    let v = ln_approx(0.0);
-    assert!(v < -10.0);
-}
-
-#[test]
-fn ln_approx_negative() {
-    // 負の値は大きな負を返す
-    let v = ln_approx(-1.0);
-    assert!(v < -10.0);
-}
-
-#[test]
-fn ln_approx_two() {
-    // ln(2) ≈ 0.693
-    let v = ln_approx(2.0);
-    assert!((v - core::f64::consts::LN_2).abs() < 0.01);
-}
-
-#[test]
-fn ln_approx_small_positive() {
-    // 小さい正の値
-    let v = ln_approx(0.1);
-    // ln(0.1) ≈ -2.302
-    // ln(0.1) ≈ -ln(10) ≈ -2.3026
-    assert!((v + core::f64::consts::LN_10).abs() < 0.1);
-}
+// ln_approx は 2026-10-09 に削除した (自前の 20 項級数 + 定義域外で -100.0 を返す
+// magic 値だった) 正典は alice-det-math の ln64 で、1 ulp まで det-math 側の試験が
+// 固定している ここでは合成された分布 (tests/dp_noise_oracle.rs の平均 0 / 分散 2b²) で
+// 見る ⚠️ 定義域外は呼ばない: u は (0, 1] なので ln は常に有限
 
 // -----------------------------------------------------------------------
 // floor_f64 追加テスト
@@ -823,31 +727,6 @@ fn error_debug() {
 // xorshift64 間接テスト
 // -----------------------------------------------------------------------
 
-#[test]
-fn xorshift64_via_uniform_produces_different_values() {
-    // 連続呼び出しで異なる値を生成
-    let mut rng = 1u64;
-    let mut values = Vec::new();
-    for _ in 0..10 {
-        values.push(uniform(&mut rng));
-    }
-    // 全値がユニークであることを確認
-    for i in 0..values.len() {
-        for j in (i + 1)..values.len() {
-            assert!((values[i] - values[j]).abs() > f64::EPSILON);
-        }
-    }
-}
-
-#[test]
-fn xorshift64_zero_seed_recovery() {
-    // シード0はxorshift64内部で1に置換される
-    let mut rng = 0u64;
-    let _ = uniform(&mut rng);
-    // 状態が0でないことを確認
-    assert_ne!(rng, 0);
-}
-
 // -----------------------------------------------------------------------
 // 統合テスト: マスキングの組み合わせ
 // -----------------------------------------------------------------------
@@ -902,31 +781,3 @@ fn equivalence_classes_insufficient_anonymity() {
 // -----------------------------------------------------------------------
 // 統合テスト: DP + 統計的性質
 // -----------------------------------------------------------------------
-
-#[test]
-fn dp_count_mean_converges() {
-    // 多数のDP countの平均が真値に収束
-    let mut rng = 999u64;
-    let true_count = 100u64;
-    let mut total = 0.0;
-    let n = 1000;
-    for _ in 0..n {
-        total += dp_count(true_count, 1.0, &mut rng);
-    }
-    let mean = total / f64::from(n);
-    assert!((mean - 100.0).abs() < 5.0);
-}
-
-#[test]
-fn dp_sum_mean_converges() {
-    // 多数のDP sumの平均が真値に収束
-    let mut rng = 777u64;
-    let true_sum = 250.0;
-    let mut total = 0.0;
-    let n = 1000;
-    for _ in 0..n {
-        total += dp_sum(true_sum, 5.0, 1.0, &mut rng);
-    }
-    let mean = total / f64::from(n);
-    assert!((mean - 250.0).abs() < 5.0);
-}

@@ -21,6 +21,10 @@
 
 extern crate alloc;
 
+// 差分プライバシーの noise 源 (RFC 8439 の ChaCha20、鍵基準の決定論)
+// ⚠️ 2026-10-09 まで xorshift64 + 時刻由来の seed で、noise を再現して引き去れた
+pub mod chacha20;
+pub mod csprng;
 pub mod differential_privacy;
 pub mod errors;
 pub mod generalization;
