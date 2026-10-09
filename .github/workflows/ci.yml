@@ -18,6 +18,32 @@ jobs:
           workspaces: services/${{ matrix.service }}
       - run: cd services/${{ matrix.service }} && cargo check
       - run: cd services/${{ matrix.service }} && cargo clippy -- -D warnings
+  # the library crate at the repository root (differential_privacy and the
+  # integration tests); the job above builds only the services
+  root-crate:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: fmt
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo fmt -- --check
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: test (fails when no test ran)
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test --no-fail-fast 2>&1 | tee test.log
+          python3 -c "import re,sys; t=sum(int(m) for m in re.findall(r'test result: \w+\. (\d+) passed', open('test.log', encoding='utf-8', errors='replace').read())); print('tests passed in total:', t); sys.exit(0 if t > 0 else 1)"
+
   lint-frontend:
     runs-on: ubuntu-latest
     steps:

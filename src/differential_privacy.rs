@@ -32,6 +32,4 @@
 //! 塞ぐ) 保証は `(ε_eff, δ)`-差分プライバシーで、`ε_eff` と `δ` の式は上流の
 //! module doc にある
 
-pub use alice_crypto::dp::{
-    dp_count, dp_sum, DpError, DpNoise, EntropyError, SecureRng,
-};
+pub use alice_crypto::dp::{dp_count, dp_sum, DpError, DpNoise, EntropyError, SecureRng};

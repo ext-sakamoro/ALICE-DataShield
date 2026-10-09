@@ -24,6 +24,12 @@ has_toolchain() { rustup toolchain list | grep -q "^$1"; }
 
 need actionlint "brew install actionlint"
 
+step "ci.yml / root-crate: fmt / clippy / test"
+cargo fmt -- --check
+cargo clippy --all-targets -- -D warnings
+cargo test --no-fail-fast 2>&1 | tee /tmp/datashield-root-test.log
+python3 -c "import re,sys; t=sum(int(m) for m in re.findall(r'test result: \w+\. (\d+) passed', open('/tmp/datashield-root-test.log', encoding='utf-8', errors='replace').read())); print('tests passed in total:', t); sys.exit(0 if t > 0 else 1)"
+
 step "ci.yml / test-rust: run [service=core-engine]"
 ( cd services/core-engine && cargo check )
 

@@ -30,7 +30,9 @@ fn the_reexported_names_are_usable_from_this_crate() {
 /// 20 noisy counts with one key
 fn counts(key: u8) -> Vec<i64> {
     let mut rng = SecureRng::from_key([key; 32]);
-    (0..20).map(|_| dp_count(1_000, 1.0, &mut rng).expect("valid")).collect()
+    (0..20)
+        .map(|_| dp_count(1_000, 1.0, &mut rng).expect("valid"))
+        .collect()
 }
 
 #[test]
@@ -38,7 +40,10 @@ fn noise_reaches_the_output_and_is_reproducible_through_this_crate() {
     // Not a pass-through: discrete Laplace puts mass ≈ 0.46 on 0 at ε = 1, so
     // one count may come back unchanged, 20 all unchanged has probability < 2^-22
     let noisy = counts(13);
-    assert!(noisy.iter().any(|&c| c != 1_000), "dp_count returned the true count unchanged");
+    assert!(
+        noisy.iter().any(|&c| c != 1_000),
+        "dp_count returned the true count unchanged"
+    );
 
     // Same key and call order, same answers — what an audit rests on.
     assert_eq!(counts(13), noisy);

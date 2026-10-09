@@ -441,8 +441,12 @@ fn lattice_noise_scale_zero_is_refused() {
 #[test]
 fn lattice_noise_different_seeds() {
     // 異なるシードで異なるノイズ
-    let n1 = DpNoise::with_key(1.0, 1.0, [1u8; 32]).privatize(0.0).expect("範囲内");
-    let n2 = DpNoise::with_key(1.0, 1.0, [2u8; 32]).privatize(0.0).expect("範囲内");
+    let n1 = DpNoise::with_key(1.0, 1.0, [1u8; 32])
+        .privatize(0.0)
+        .expect("範囲内");
+    let n2 = DpNoise::with_key(1.0, 1.0, [2u8; 32])
+        .privatize(0.0)
+        .expect("範囲内");
     assert!((n1 - n2).abs() > f64::EPSILON);
 }
 
@@ -458,14 +462,18 @@ fn lattice_noise_advances_the_stream() {
 #[test]
 fn lattice_noise_large_scale() {
     // 大きなscaleでもパニックしない
-    let noise = DpNoise::with_key(1e10, 1.0, [42u8; 32]).privatize(0.0).expect("範囲内");
+    let noise = DpNoise::with_key(1e10, 1.0, [42u8; 32])
+        .privatize(0.0)
+        .expect("範囲内");
     assert!(noise.is_finite());
 }
 
 #[test]
 fn lattice_noise_small_scale() {
     // 小さな scale では noise も小さい
-    let noise = DpNoise::with_key(1e-10, 1.0, [42u8; 32]).privatize(0.0).expect("範囲内");
+    let noise = DpNoise::with_key(1e-10, 1.0, [42u8; 32])
+        .privatize(0.0)
+        .expect("範囲内");
     assert!(noise.abs() < 1.0);
 }
 
