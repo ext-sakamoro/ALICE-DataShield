@@ -51,7 +51,7 @@ fn equivalence_classes() {
 
 #[test]
 fn dp_count_noisy() {
-    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let noisy = dp_count(1000, 1.0, &mut rng).expect("eps = 1 は有効");
     // Should be close to 1000 but not exact
     assert!((noisy - 1000.0).abs() < 50.0);
@@ -59,7 +59,7 @@ fn dp_count_noisy() {
 
 #[test]
 fn dp_sum_noisy() {
-    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let noisy = dp_sum(500.0, 10.0, 1.0, &mut rng).expect("有効な引数");
     assert!((noisy - 500.0).abs() < 100.0);
 }
@@ -506,7 +506,7 @@ fn laplace_noise_variance_increases_with_scale() {
 fn uniform_is_in_the_open_unit_interval() {
     // ⚠️ 範囲は (0, 1] — 0 を返さないことが要件 (逆関数法で ln(0) = -inf を踏むため)
     //    旧実装は [0, 1) で、0 が出ると noise が -inf になりえた
-    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     for _ in 0..10_000 {
         let u = rng.next_f64_open01();
         assert!(u > 0.0, "0 が返った (ln(0) = -inf を踏む)");
@@ -516,7 +516,7 @@ fn uniform_is_in_the_open_unit_interval() {
 
 #[test]
 fn uniform_advances_the_stream() {
-    let mut rng = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let u1 = rng.next_f64_open01();
     let u2 = rng.next_f64_open01();
     assert!((u1 - u2).abs() > f64::EPSILON);
@@ -526,7 +526,7 @@ fn uniform_advances_the_stream() {
 fn an_all_zero_key_still_produces_a_usable_stream() {
     // ⚠️ 全 0 の鍵は「弱い鍵」だが ChaCha20 は状態が縮退しない
     //    (xorshift は 0 状態で固定点になるので旧実装は特別扱いが要った)
-    let mut rng = crate::csprng::SecureRng::from_key([0u8; 32]);
+    let mut rng = crate::differential_privacy::SecureRng::from_key([0u8; 32]);
     let xs: Vec<f64> = (0..64).map(|_| rng.next_f64_open01()).collect();
     assert!(xs.iter().all(|&u| u > 0.0 && u <= 1.0));
     assert!(
@@ -542,8 +542,8 @@ fn an_all_zero_key_still_produces_a_usable_stream() {
 #[test]
 fn dp_count_deterministic_with_same_seed() {
     // 同じ鍵なら同じ結果 (決定論の基準は seed でなく 32 byte の秘密鍵)
-    let mut rng1 = crate::csprng::SecureRng::from_key([42u8; 32]);
-    let mut rng2 = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng1 = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
+    let mut rng2 = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let n1 = dp_count(100, 1.0, &mut rng1).expect("有効な ε");
     let n2 = dp_count(100, 1.0, &mut rng2).expect("有効な ε");
     assert_eq!(n1.to_bits(), n2.to_bits());
@@ -556,8 +556,8 @@ fn dp_count_deterministic_with_same_seed() {
 #[test]
 fn dp_sum_deterministic_with_same_seed() {
     // 同じシードなら同じ結果
-    let mut rng1 = crate::csprng::SecureRng::from_key([42u8; 32]);
-    let mut rng2 = crate::csprng::SecureRng::from_key([42u8; 32]);
+    let mut rng1 = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
+    let mut rng2 = crate::differential_privacy::SecureRng::from_key([42u8; 32]);
     let n1 = dp_sum(100.0, 5.0, 1.0, &mut rng1).expect("有効な引数");
     let n2 = dp_sum(100.0, 5.0, 1.0, &mut rng2).expect("有効な引数");
     assert!((n1 - n2).abs() < f64::EPSILON);

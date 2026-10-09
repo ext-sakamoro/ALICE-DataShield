@@ -37,6 +37,41 @@ docker compose up -d
 # Frontend: http://localhost:3000
 ```
 
+## Differential privacy
+
+The noise comes from [`alice-crypto`](https://github.com/ext-sakamoro/ALICE-Crypto)'s
+`dp` module, re-exported here as `differential_privacy`:
+
+```rust
+use alice_datashield::differential_privacy::{dp_count, SecureRng};
+
+let mut rng = SecureRng::from_key(key_from_your_key_store);
+let noisy = dp_count(1_000, 1.0, &mut rng)?;   // count + Lap(1/epsilon)
+```
+
+Reproducibility and privacy are not in conflict here because the determinism is
+anchored to a **secret key** rather than to a clock: the same key gives the same
+noise (replay, audit, tests), and without the key the noise can be neither
+predicted nor reproduced — so it cannot be subtracted back out.
+
+This crate used to carry its own ChaCha20 block function, CSPRNG and inverse
+transform. They were removed in favour of one implementation upstream: the same
+law existing twice is the same law getting fixed once.
+
+⚠️ `dp_count` / `dp_sum` take ε and derive the Laplace scale themselves. An ε
+that is accepted and then ignored is worse than no ε at all, and passing the
+scale in is how that happens.
+
+⚠️ Known limit, stated upstream as well: floating-point inverse-transform
+sampling is subject to Mironov's 2012 attack, so the ε is the value for ideal
+real arithmetic rather than a machine-level guarantee.
+
 ## License
 
-AGPL-3.0-or-later
+**AGPL-3.0-or-later OR LicenseRef-Commercial** (dual-licensed) — see
+[LICENSE-AGPL](LICENSE-AGPL) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
+
+Running this service for yourself costs nothing. Offering the same service to
+others over a network is what the AGPL asks you to publish your changes for; if
+that does not suit, the commercial option exists. Commercial enquiries:
+contact@extoria.co.jp

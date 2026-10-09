@@ -3,16 +3,24 @@ name = "alice-datashield"
 version = "0.1.0"
 edition = "2021"
 description = "Data masking, anonymization, and differential privacy"
-license = "LicenseRef-Proprietary"
-# proprietary: crates.io へ出さない (LICENSE 参照)
+# AGPL と商用の二重 license (LICENSE-AGPL / LICENSE-COMMERCIAL.md)
+#
+# それまで LicenseRef-Proprietary だったが、その判断は循環していた: 条文を
+# proprietary に揃えた commit 自身が理由を「未 publish かつ PRIVATE の repo なので」
+# と述べており、private である理由は記録されていなかった (直前の条文は AGPL-3.0 で、
+# 同じ雛形から生まれた姉妹 service のうち 2 本は公開されている)
+#
+# AGPL は本 service の形と噛み合う: 自分でホストして使う分には無償で、同じものを
+# ホストして提供する側には公開義務が生じる 商用の選択肢は LICENSE-COMMERCIAL.md
+license = "AGPL-3.0-or-later OR LicenseRef-Commercial"
+# crates.io へは出さない — library でなく service なので、公開する価値は
+# repository 側にある (SPDX が dual なので SBOM からは商用の選択肢が見える)
 publish = false
 
 [dependencies]
-# 超越関数を bit 一致にする (ln は Laplace の逆関数法の中核)
-# ⚠️ 2026-10-09 まで自前の 20 項級数で、定義域外は -100.0 を返す magic 値だった
-#    (確率 0 の事象ではなく u → 0 の近傍で現実に通る経路) ⇒ 分布が歪んでいた
-alice-det-math = { version = "0.4", default-features = false }
-# noise 源の鍵を OS entropy から取る
-# ⚠️ 時刻由来の seed は、おおよその時刻を知る攻撃者が総当たりできるので使わない
-#    no_std の target では最終 binary 側で register_custom_getrandom! を登録する
-getrandom = { version = "0.2", default-features = false }
+# 差分プライバシーの noise 源 — ChaCha20 CSPRNG / Laplace の逆関数法 / bit 一致の ln
+# ⚠️ 2026-10-09 まで本 crate が自前で持っていたが、同じ法則が ALICE-Crypto 側にもあり
+#    写しが 2 つあると片方だけ直る 現に noise 生成は 3 箇所に独立に存在し、
+#    本 crate だけが直った状態になっていた ⇒ 暗号 primitive の持ち主に寄せた
+#    (AGPL / 商用の二重 license なので license の向きも通る)
+alice-crypto = { version = "0.2", default-features = false, features = ["std"] }

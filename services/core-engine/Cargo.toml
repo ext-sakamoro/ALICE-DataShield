@@ -2,7 +2,10 @@
 name = "alice-datashield-engine"
 version = "0.1.0"
 edition = "2021"
-license = "LicenseRef-Proprietary"
+# repo 直下と同じ二重 license (条文は ../../LICENSE-AGPL /
+# ../../LICENSE-COMMERCIAL.md) ⚠️ 直下だけ変えると SPDX が repo 内で 2 種類に
+# なり、条文 file の無い宣言が残って GitHub / SBOM が NOASSERTION になる
+license = "AGPL-3.0-or-later OR LicenseRef-Commercial"
 # proprietary: crates.io へ出さない (LICENSE 参照)
 publish = false
 [dependencies]
