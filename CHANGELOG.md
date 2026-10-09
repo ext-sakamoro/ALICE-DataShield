@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- CI: repo 直下の library crate (`differential_privacy` と integration test) を ubuntu / macos / windows で fmt・clippy・test する job `root-crate` を足した (従来の CI は services の check / clippy だけで、この crate の試験は CI で 1 本も走っていなかった) test の件数が 0 なら失敗する preflight にも同じ step を足した
+- CI: repo 直下の library crate (`differential_privacy` と integration test) を ubuntu / macos / windows で fmt・clippy・test する job `root-crate` を足した (従来の CI は services の check / clippy だけで、この crate の試験は CI で 1 本も走っていなかった) test の件数は target (lib・各 integration test・doc test) ごとに `scripts/test_counts.py` が数え、0 本の target があれば失敗する (合計だけだと 1 つの target が 0 本でも通る、意図して 0 本の target は `scripts/test-count-allowlist.txt` に理由つきで載せる、試験は `scripts/test_test_counts.py`) preflight にも同じ step を足した
 - CI: `ci.yml` が `ci/**` branch の push と手動実行 (`workflow_dispatch`) でも走る (main に fast-forward する前に同じ検査を branch で回すため)
 - **`alice-crypto` を 0.3 に上げた (差分プライバシーの noise)** 0.2 の noise は浮動小数点の逆関数法で、結果の下位 bit が一様値を漏らした (Mironov 2012) 0.3 は整数演算だけの離散 Laplace を定数時間で標本化する (count はそのまま、実数は格子 `2^-20 Δ` に丸めてから) 保証は `(ε_eff, δ)`-差分プライバシーで `ε_eff ≤ ε · (1 + 2^-20)`、`δ = (1 + e^ε_eff) · 2^-103` 再公開している `differential_privacy` の型が変わる: `dp_count` は `i64` を返す / `DpNoise::with_key` と `try_with_key` は `(sensitivity, epsilon, key)` を受ける / `DpNoise::laplace()` は無くなり、値を格子に丸めてから noise を足す `privatize(x)` を使う / `DpNoise::scale()` は `sensitivity()` / `epsilon()` / `lattice()` / `effective_epsilon()` に 移行手順は alice-crypto の CHANGELOG 0.3.0
 - **The differential-privacy noise source moved upstream to `alice-crypto`'s

@@ -37,12 +37,14 @@ jobs:
         run: cargo fmt -- --check
       - name: clippy
         run: cargo clippy --all-targets -- -D warnings
-      - name: test (fails when no test ran)
+      - name: test-count gate (tests)
+        run: python3 scripts/test_test_counts.py
+      - name: test (fails when any test target ran no test)
         shell: bash
         run: |
           set -o pipefail
           cargo test --no-fail-fast 2>&1 | tee test.log
-          python3 -c "import re,sys; t=sum(int(m) for m in re.findall(r'test result: \w+\. (\d+) passed', open('test.log', encoding='utf-8', errors='replace').read())); print('tests passed in total:', t); sys.exit(0 if t > 0 else 1)"
+          python3 scripts/test_counts.py test.log
 
   lint-frontend:
     runs-on: ubuntu-latest
