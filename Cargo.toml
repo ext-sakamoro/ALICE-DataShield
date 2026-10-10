@@ -23,4 +23,4 @@ publish = false
 #    写しが 2 つあると片方だけ直る 現に noise 生成は 3 箇所に独立に存在し、
 #    本 crate だけが直った状態になっていた ⇒ 暗号 primitive の持ち主に寄せた
 #    (AGPL / 商用の二重 license なので license の向きも通る)
-alice-crypto = { version = "0.3", default-features = false, features = ["std"] }
+alice-crypto = { version = "0.4", default-features = false, features = ["std"] }

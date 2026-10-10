@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `alice-crypto` を 0.3 から 0.4 に上げた 0.4 で足された `dp_int` (整数の値の離散 Laplace) / `randomized_response` / `bernoulli_ratio` を `differential_privacy` から再 export し、`DpError::InvalidProbability` も届く 0.3 の `SecureRng` は keystream の 2^32 − 1 block 目 (約 256 GiB) で panic したが、0.4 で直っている 試験 `tests/dp_bridge.rs` に 3 つが本 crate の path から呼べて noise が乗ることを足した
+
 ## [0.2.0] — 2026-10-10
 
 ### 移行 (0.1.x の `differential_privacy` から)

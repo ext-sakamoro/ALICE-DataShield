@@ -12,7 +12,9 @@
 //! re-export that compiles but is never exercised is how a dependency gets
 //! "wired" on paper only.
 
-use alice_datashield::differential_privacy::{dp_count, dp_sum, DpNoise, SecureRng};
+use alice_datashield::differential_privacy::{
+    bernoulli_ratio, dp_count, dp_int, dp_sum, randomized_response, DpError, DpNoise, SecureRng,
+};
 
 #[test]
 fn the_reexported_names_are_usable_from_this_crate() {
@@ -59,4 +61,27 @@ fn invalid_parameters_are_refused_through_this_crate_too() {
     assert!(dp_count(1, f64::NAN, &mut rng).is_err());
     assert!(dp_sum(1.0, 0.0, 1.0, &mut rng).is_err());
     assert!(DpNoise::try_with_key(-1.0, 1.0, [1u8; 32]).is_err());
+}
+
+#[test]
+fn the_mechanisms_added_in_alice_crypto_0_4_are_reachable_and_carry_noise() {
+    // dp_int: integer values with a whole-number sensitivity
+    let mut rng = SecureRng::from_key([11u8; 32]);
+    let ints: Vec<i64> = (0..64)
+        .map(|_| dp_int(500, 2, 1.0, &mut rng).expect("valid"))
+        .collect();
+    assert!(ints.iter().any(|&v| v != 500), "dp_int added no noise");
+    assert_eq!(dp_int(1, 0, 1.0, &mut rng), Err(DpError::InvalidScale));
+    // randomized_response: flips some bits, keeps most at ε = 2
+    // P(keep) = e^2 / (1 + e^2) ≈ 0.881: about 264 of 300, ±6σ ≈ ±34
+    let kept = (0..300)
+        .filter(|_| randomized_response(true, 2.0, &mut rng).expect("valid"))
+        .count();
+    assert!((220..300).contains(&kept), "kept {kept} of 300 at ε = 2");
+    // bernoulli_ratio: exact fraction, refuses an impossible one
+    assert_eq!(bernoulli_ratio(3, 3, &mut rng), Ok(true));
+    assert_eq!(
+        bernoulli_ratio(4, 3, &mut rng),
+        Err(DpError::InvalidProbability)
+    );
 }
