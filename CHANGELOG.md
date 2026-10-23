@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - `alice-crypto` を 0.3 から 0.4 に上げた 0.4 で足された `dp_int` (整数の値の離散 Laplace) / `randomized_response` / `bernoulli_ratio` を `differential_privacy` から再 export し、`DpError::InvalidProbability` も届く 0.3 の `SecureRng` は keystream の 2^32 − 1 block 目 (約 256 GiB) で panic したが、0.4 で直っている 試験 `tests/dp_bridge.rs` に 3 つが本 crate の path から呼べて noise が乗ることを足した
 
+### Security
+- 依存: `ctutils` を 0.4.3 から 0.4.5 に上げた (RUSTSEC-2026-0385、0.4.4 未満の mask / u128 の演算が定数時間でない、blake3 → digest 0.11 経由で lock に入る、`Cargo.lock` のみの変更で ignore は足さない)
+
 ## [0.2.0] — 2026-10-10
 
 ### 移行 (0.1.x の `differential_privacy` から)
