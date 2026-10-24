@@ -12,7 +12,7 @@ description = "Data masking, anonymization, and differential privacy"
 #
 # AGPL は本 service の形と噛み合う: 自分でホストして使う分には無償で、同じものを
 # ホストして提供する側には公開義務が生じる 商用の選択肢は LICENSE-COMMERCIAL.md
-license = "AGPL-3.0-or-later OR LicenseRef-Commercial"
+license = "LicenseRef-Proprietary"
 # crates.io へは出さない — library でなく service なので、公開する価値は
 # repository 側にある (SPDX が dual なので SBOM からは商用の選択肢が見える)
 publish = false

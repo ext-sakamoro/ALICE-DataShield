@@ -72,10 +72,6 @@ upstream module doc gives each term.
 
 ## License
 
-**AGPL-3.0-or-later OR LicenseRef-Commercial** (dual-licensed) — see
-[LICENSE-AGPL](LICENSE-AGPL) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
+`LicenseRef-Proprietary`. The text is [LICENSE-Proprietary](LICENSE-Proprietary).
 
-Running this service for yourself costs nothing. Offering the same service to
-others over a network is what the AGPL asks you to publish your changes for; if
-that does not suit, the commercial option exists. Commercial enquiries:
-contact@extoria.co.jp
+Enquiries: https://extoria.co.jp/
