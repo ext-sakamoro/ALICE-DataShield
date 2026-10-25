@@ -2,8 +2,7 @@
 name = "api-gateway"
 version = "0.1.0"
 edition = "2021"
-# repo 直下と同じ二重 license (条文は ../../LICENSE-AGPL /
-# ../../LICENSE-COMMERCIAL.md) ⚠️ 直下だけ変えると SPDX が repo 内で 2 種類に
+# repo 直下と同じ license (条文は ../../LICENSE-Proprietary) ⚠️ 直下だけ変えると SPDX が repo 内で 2 種類に
 # なり、条文 file の無い宣言が残って GitHub / SBOM が NOASSERTION になる
 license = "LicenseRef-Proprietary"
 # proprietary: crates.io へ出さない (LICENSE 参照)

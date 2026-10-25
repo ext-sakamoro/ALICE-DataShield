@@ -8,10 +8,8 @@
 //! ALICE-Analytics / ALICE-Physics の 3 箇所に独立に存在し、本 crate だけが直った
 //! 状態になっていた)
 //!
-//! ⚠️ 置き場を ALICE-Crypto にしたのは license の向きで決まる: 暗号 primitive の
-//! 持ち主で、公開済かつ `AGPL-3.0-or-later OR LicenseRef-Commercial` なので、
-//! AGPL 側の crate からも商用側の許諾でも引ける 新しい crate を作ると ChaCha20 の
-//! 実装が 3 つ目になる
+//! ⚠️ 置き場を ALICE-Crypto にしたのは暗号 primitive の持ち主だから: 新しい crate を
+//! 作ると ChaCha20 の実装が 3 つ目になる
 //!
 //! # 使い方
 //!
