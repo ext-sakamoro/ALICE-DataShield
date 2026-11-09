@@ -12,4 +12,4 @@ publish = false
 # ⚠️ 2026-10-09 まで本 crate が自前で持っていたが、同じ法則が ALICE-Crypto 側にもあり
 #    写しが 2 つあると片方だけ直る 現に noise 生成は 3 箇所に独立に存在し、
 #    本 crate だけが直った状態になっていた ⇒ 暗号 primitive の持ち主に寄せた
-alice-crypto = { git = "https://github.com/ext-sakamoro/ALICE-Crypto", branch = "main", version = "0.6.0", default-features = false, features = ["std"] }
+alice-crypto = { git = "https://github.com/ext-sakamoro/ALICE-Crypto", branch = "main", version = "0.7", default-features = false, features = ["std"] }

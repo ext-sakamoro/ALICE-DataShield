@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- 依存: alice-crypto を 0.7 に上げた (`std` の API は同じ、0.7 は module ごとの feature を足した版)
 - 依存: alice-crypto を crates.io の 0.4 でなく ALICE-Crypto の main branch と版 (0.6.0) で引く lock の crates.io の alice-* は 0 (alice-det-math は引かない)
 - `alice-crypto` を 0.3 から 0.4 に上げた 0.4 で足された `dp_int` (整数の値の離散 Laplace) / `randomized_response` / `bernoulli_ratio` を `differential_privacy` から再 export し、`DpError::InvalidProbability` も届く 0.3 の `SecureRng` は keystream の 2^32 − 1 block 目 (約 256 GiB) で panic したが、0.4 で直っている 試験 `tests/dp_bridge.rs` に 3 つが本 crate の path から呼べて noise が乗ることを足した
 - CI: 公開する文面の検査 (`Public text` workflow、`scripts/public_text.sh`) を追加 ALICE-Law の `scripts/public_text_check.py` を `.github/public-text-pin` の revision で取得し、SHA-256 が一致した時だけ使って、HEAD の全 tracked file (path と本文) と送った commit (message・追加行・追加 path) を読む 何も比較できなければ失敗する preflight でも走る
